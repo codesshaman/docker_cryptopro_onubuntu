@@ -1,18 +1,18 @@
 name = Laravel with cpro
 
-No_color=\033[0m		# Color Reset
-Color_Off='\e[0m'       # Color Off
-Ok_green=\033[32;01m	# Green Ok
-Err_red=\033[31;01m		# Error red
-Warn_yel=\033[33;01m	# Warning yellow
-Red='\e[1;31m'          # Red
-Green='\e[1;32m'        # Green
-Yellow='\e[1;33m'       # Yellow
-Blue='\e[1;34m'         # Blue
-Purple='\e[1;35m'       # Purple
-Cyan='\e[1;36m'         # Cyan
-White='\e[1;37m'        # White
-UCyan='\e[4;36m'        # Cyan
+NO_COLOR=\033[0m		# Color Reset
+COLOR_OFF='\e[0m'       # Color Off
+OK_COLOR=\033[32;01m	# Green Ok
+ERROR_COLOR=\033[31;01m		# Error red
+WARN_COLOR=\033[33;01m	# Warning yellow
+RED='\e[1;31m'          # Red
+GREEN='\e[1;32m'        # Green
+YELLOW='\e[1;33m'       # Yellow
+BLUE='\e[1;34m'         # Blue
+PURPLE='\e[1;35m'       # Purple
+CYAN='\e[1;36m'         # Cyan
+WHITE='\e[1;37m'        # White
+UCYAN='\e[4;36m'        # Cyan
 
 all:
 	@printf "Launch configuration ${name}...\n"
@@ -39,7 +39,7 @@ re:	down
 	@docker-compose -f ./docker-compose.yml up -d --build
 
 ps:
-	@printf "$(ERROR_COLOR)==== View configuration ${name}... ====$(NO_COLOR)\n"
+	@printf "$(BLUE)==== View configuration ${name}... ====$(NO_COLOR)\n"
 	@docker-compose -f ./docker-compose.yml ps
 
 clean: down
