@@ -61,7 +61,17 @@ RUN     mkdir -p $CADES_DIR_TMP && cd $CADES_DIR_TMP && \
 
 # Установка php
 RUN cd $PHP_SRC && tar zxvf php-7.4.3.tar.gz && mv php-7.4.3/* . &&  \
-        ./configure --prefix $PHP_DIR --enable-fpm --enable-ftp --enable-mbstring --with-openssl --with-zip --with-openssl-dir=/usr/bin --with-pdo-pgsql --with-pgsql && \
+        ./configure --prefix \
+        $PHP_DIR \
+        --enable-fpm \
+        --enable-ftp \
+        --enable-mbstring \
+        --with-zip \
+        --with-pgsql \
+        --with-openssl \
+        --with-pdo-pgsql \
+        --with-openssl-dir=/usr/bin \
+        --with-curl=/opt/cprocsp/include/curl && \
         make && make install && update-alternatives --install /usr/local/bin/php php $PHP_DIR/bin/php 100 && \
         cp $PHP_PTH/php7_support.patch /opt/cprocsp/src/phpcades/ && \
         cd /opt/cprocsp/src/phpcades/ && patch -p0 < ./php7_support.patch && \
@@ -104,9 +114,6 @@ RUN cp $PHP_SRC/php.ini-production $PHP_DIR/lib/php.ini && \
                 gcc \
                 zip \
                 g++
-
-# Установка curl
-#RUN apt install -y php7.4-curl php7.4-mbstring
 
 # Загрузка сертификата
 COPY certificates /var/opt/cprocsp/keys/www-data/
