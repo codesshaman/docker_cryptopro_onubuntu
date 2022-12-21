@@ -100,7 +100,6 @@ RUN cp $PHP_SRC/php.ini-production $PHP_DIR/lib/php.ini && \
         chown -R www-data:www-data $PHP_DIR/var/log && rm -rf /tmp/* && \
         ln -s $PHP_DIR/sbin/php-fpm /usr/sbin/php-fpm && \
         apt-get purge -y --allow-remove-essential  \
-                ca-certificates \
                 build-essential \
                 libsqlite3-dev \
                 libboost-dev \
