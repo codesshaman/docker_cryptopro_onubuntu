@@ -17,6 +17,7 @@ ENV PATH="/opt/cprocsp/bin/amd64:/opt/cprocsp/sbin/amd64:${PATH}"
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
         && apt-get update \
         && apt-get install --no-install-recommends -y \
+                libcurl4-openssl-dev \
                 ca-certificates \
                 build-essential \
                 libsqlite3-dev \
