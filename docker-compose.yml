@@ -2,36 +2,38 @@ version: '3'
 
 services:
   nginx:
-    image: nginx:stable-alpine
+    image: nginx:1.23.3-alpine
     volumes:
-      - ./laravel:/var/www/
-      - ./nginx/conf.d:/etc/nginx/conf.d/
+      - ./laravel:/var/www:z
+      - ./nginx/conf.d:/etc/nginx/conf.d:z
+      - ./logs:/var/log/nginx:z
     ports:
       - "80:80"
     tty:  true
     restart: unless-stopped
     depends_on:
-      - lar8crpro
+      - lar8cpro
 
-  lar8crpro:
+  lar8cpro:
     build:
       context: .
       dockerfile: Dockerfile
       args:
         TEST_CA_DIR: "certificates/4BC6DC14D97010C41A26E058AD851F81C842415A.cer"
         PHP_URL: "https://www.php.net/distributions/php-7.4.3.tar.gz"
+        COMPOSER: "sources/composer.phar"
     tty:  true
     restart: unless-stopped
     user: 1000:1000
     volumes:
       - ./laravel:/var/www
-    container_name: lar8crpro
+    container_name: lar8cpro
 
   composer:
     image: composer:2.0.8
     volumes:
-      - ./laravel:/var/www/
+      - ./laravel:/var/www:z
     working_dir: /var/www/
     command: composer install
     depends_on:
-      - lar8crpro
+      - lar8cpro
