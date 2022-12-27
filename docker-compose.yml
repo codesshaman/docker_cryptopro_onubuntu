@@ -7,33 +7,37 @@ services:
       - ./laravel:/var/www:z
       - ./nginx/conf.d:/etc/nginx/conf.d:z
       - ./logs:/var/log/nginx:z
+    env_file:
+      - .env
     ports:
-      - "80:80"
+      - "$PROJECT_PORT:80"
     tty:  true
+    
     restart: unless-stopped
     depends_on:
-      - lar8cpro
+      - cryptopro
+    container_name: $NGINX_NAME
 
-  lar8cpro:
+  cryptopro:
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        TEST_CA_DIR: "certificates/4BC6DC14D97010C41A26E058AD851F81C842415A.cer"
-        PHP_URL: "https://www.php.net/distributions/php-7.4.3.tar.gz"
-        COMPOSER: "sources/composer.phar"
+        TEST_CA: $TEST_CA
     tty:  true
+    env_file:
+      - .env
     restart: unless-stopped
     user: 1000:1000
     volumes:
       - ./laravel:/var/www
-    container_name: lar8cpro
+    container_name: $PROJECT_NAME
 
-  composer:
-    image: composer:2.0.8
-    volumes:
-      - ./laravel:/var/www:z
-    working_dir: /var/www/
-    command: composer install
-    depends_on:
-      - lar8cpro
+  # composer:
+  #   image: composer:2.0.8
+  #   volumes:
+  #     - ./laravel:/var/www/
+  #   working_dir: /var/www/
+  #   command: composer install
+  #   depends_on:
+  #     - lar8cpro

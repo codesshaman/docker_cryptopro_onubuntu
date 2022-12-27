@@ -1,7 +1,6 @@
 FROM ubuntu:20.04
 # Следующие аргументы приходят из docker-compose. они переопределяют локальные
-ARG TEST_CA_DIR
-ARG COMPOSER
+ARG TEST_CA
 # локальные аргументы
 ARG TZ=Europe/Moscow
 ARG     CSP_DIR_TMP=/tmp/csp
@@ -18,12 +17,12 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
         && apt-get update \
         && apt-get install --no-install-recommends -y \
                 libcurl4-openssl-dev \
-                ca-certificates \
                 build-essential \
+                ca-certificates \
                 libsqlite3-dev \
                 libboost-dev \
-                libxml2-dev \
                 libonig-dev \
+                libxml2-dev \
                 libzip-dev \
                 pkg-config \
                 libpq-dev \
@@ -32,7 +31,6 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
                 openssl \
                 unzip \
                 wget \
-                curl \
                 nano \
                 gcc \
                 zip \
@@ -43,8 +41,8 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
 COPY sources/linux-amd64_deb.tgz $CSP_DIR_TMP/linux-amd64_deb.tgz
 COPY sources/cades-linux-amd64.tar.gz $CADES_DIR_TMP/cades-linux-amd64.tar.gz
 COPY sources/php7_support.patch $PHP_PTH/php7_support.patch
-COPY $COMPOSER /usr/local/bin/composer
-COPY sources/php-7.4.3.tar.gz $PHP_SRC
+COPY sources/composer.phar /usr/local/bin/composer
+COPY sources/php-7.4.33.tar.gz $PHP_SRC
 
 # Установка csp
 RUN mkdir -p $CSP_DIR_TMP && cd $CSP_DIR_TMP && \
@@ -61,9 +59,8 @@ RUN     mkdir -p $CADES_DIR_TMP && cd $CADES_DIR_TMP && \
         cd && rm -rf $CADES_DIR_TMP
 
 # Установка php
-RUN cd $PHP_SRC && tar zxvf php-7.4.3.tar.gz && mv php-7.4.3/* . &&  \
-        ./configure --prefix \
-        $PHP_DIR \
+RUN cd $PHP_SRC && tar zxvf php-7.4.33.tar.gz && mv php-7.4.33/* . &&  \
+        ./configure --prefix $PHP_DIR \
         --enable-fpm \
         --enable-ftp \
         --enable-mbstring \
@@ -96,24 +93,10 @@ RUN cp $PHP_SRC/php.ini-production $PHP_DIR/lib/php.ini && \
         sed -i 's!;error_log = log/php-fpm.log!error_log = syslog!g' $PHP_DIR/etc/php-fpm.conf && \
         mv $PHP_DIR/etc/php-fpm.d/www.conf.default $PHP_DIR/etc/php-fpm.d/www.conf && \
         sed -i 's!listen\s*=.*!listen = 9000!1' $PHP_DIR/etc/php-fpm.d/www.conf && \
+        sed -i 's!;pm.status!pm.status!g'  $PHP_DIR/etc/php-fpm.d/www.conf && \
         sed -i 's!nobody!www-data!g' $PHP_DIR/etc/php-fpm.d/www.conf && \
         chown -R www-data:www-data $PHP_DIR/var/log && rm -rf /tmp/* && \
-        ln -s $PHP_DIR/sbin/php-fpm /usr/sbin/php-fpm && \
-        apt-get purge -y --allow-remove-essential  \
-                build-essential \
-                libsqlite3-dev \
-                libboost-dev \
-                libxml2-dev \
-                libonig-dev \
-                libzip-dev \
-                pkg-config \
-                libpq-dev \
-                php-dev \
-                openssl \
-                unzip \
-                gcc \
-                zip \
-                g++
+        ln -s $PHP_DIR/sbin/php-fpm /usr/sbin/php-fpm
 
 # Загрузка сертификата
 COPY certificates /var/opt/cprocsp/keys/www-data/
@@ -121,7 +104,7 @@ RUN chown -R www-data:www-data /var/opt/cprocsp/keys/www-data/
 USER www-data
 RUN csptestf -absorb -certs
 USER root
-ADD $TEST_CA_DIR /root/test-ca-root.crt
+ADD certificates/$TEST_CA /root/test-ca-root.crt
 RUN certmgr -inst -store mroot -file /root/test-ca-root.crt
 
 # Открытие порта
