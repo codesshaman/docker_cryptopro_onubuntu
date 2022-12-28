@@ -31,7 +31,7 @@ services:
     user: 1000:1000
     volumes:
       - ./laravel:/var/www
-    container_name: $PROJECT_NAME
+    container_name: $CPRO_NAME
 
   # composer:
   #   image: composer:2.0.8

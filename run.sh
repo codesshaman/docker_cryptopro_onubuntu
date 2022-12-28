@@ -1,7 +1,7 @@
 #!/bin/bash
-GIT_PATH="https://github.com/GosZakaz/gosz-market-back.git"
+GIT_PATH="$(grep "GIT_PATH" .env | sed -r 's/.{,9}//')"
 GIT_BRANCH="$(grep "GIT_BRANCH" .env | sed -r 's/.{,11}//')"
-NAME="$(grep "PROJECT_NAME" .env | sed -r 's/.{,13}//')"
+NAME="$(grep "CPRO_NAME" .env | sed -r 's/.{,10}//')"
 USER_ID=$(id -u)
 FOLDER=${PWD##*/}
 # FILE_NAME='laravel/.env' #.env
@@ -37,7 +37,7 @@ check_project_name() {
 check() {
   if [ ! -f ".env_laravel" ]; then
     ROOTENV=false
-    PROJECT_NAME=$(grep "GIT_BRANCH" .env | sed -r 's/.{,11}//')
+    CPRO_NAME=$(grep "GIT_BRANCH" .env | sed -r 's/.{,11}//')
     if confirm "Не найден корневой env-файл .env_laravel, продолжить сборку? (y/n or enter for no)"; then
       echo "Продолжаю сборку без env-файла"
     else
@@ -55,9 +55,9 @@ run() {
   sleep ${TIMEOUT}
   docker exec -it ${NAME} composer update
   sleep ${TIMEOUT}
-  docker exec -it ${NAME} php artisan passport:install
-  sleep ${TIMEOUT}
-  docker exec -it $NAME php artisan token:generate
+  # docker exec -it ${NAME} php artisan passport:install
+  # sleep ${TIMEOUT}
+  # docker exec -it $NAME php artisan token:generate
   # sleep ${TIMEOUT}
   docker exec -it $NAME php artisan optimize
   # sleep ${TIMEOUT}
@@ -77,23 +77,6 @@ clone() {
     fi
   fi
 }
-# Функция смены токены
-# token () {
-#   if confirm "Сменить токен? (y/n or enter for no)"; then
-#     docker-compose down
-#     TKN_STRING=$(grep -n 'TOKEN_PURCHASE' ${FILE_NAME} | cut -d: -f1)
-#     let REMOVE_STR=$TKN_STRING+1
-#     sed -i "${TKN_STRING}d" ${FILE_NAME}
-#     read -p 'Введите новый токен: ' TOKEN_PURCHASE
-#     sed -i "${TKN_STRING}i\TOKEN_PURCHASE='${TOKEN_PURCHASE}'\n" ${FILE_NAME}
-#     sed -i "${TKN_STRING}i\TOKEN_PURCHASE='${TOKEN_PURCHASE}'\n" .env
-#     sed -i "${REMOVE_STR}d" ${FILE_NAME}
-#     run
-#   else
-#     run
-# #    docker-compose up -d --build
-#   fi
-# }
 # Тело скрипта
 if [ ! -d "laravel/" ]; then
   clone

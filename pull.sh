@@ -1,5 +1,5 @@
 #!/bin/bash
-NAME="$(grep "PROJECT_NAME" .env | sed -r 's/.{,13}//')"
+NAME="$(grep "CPRO_NAME" .env | sed -r 's/.{,10}//')"
 cd laravel
 git pull
 cd ..
