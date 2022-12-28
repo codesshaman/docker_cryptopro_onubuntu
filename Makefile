@@ -24,6 +24,10 @@ down:
 	@printf "$(ERROR_COLOR)==== Stopping configuration ${name}... ====$(NO_COLOR)\n"
 	@docker-compose -f ./docker-compose.yml down
 
+run: down
+	@printf "$(OK_COLOR)==== Rebuild configuration ${name}... ====$(NO_COLOR)\n"
+	@bash run.sh
+
 re:	down
 	@printf "$(OK_COLOR)==== Rebuild configuration ${name}... ====$(NO_COLOR)\n"
 	@docker-compose -f ./docker-compose.yml up -d --build
@@ -34,13 +38,15 @@ ps:
 
 clean: down
 	@printf "$(ERROR_COLOR)==== Cleaning configuration ${name}... ====$(NO_COLOR)\n"
-	@docker system prune -a
+	@rm -rf laravel
+	@sudo rm -rf logs
+#	@docker system prune -a
 
 fclean:
 	@printf "$(ERROR_COLOR)==== Total clean of all configurations docker ====$(NO_COLOR)\n"
-	# @docker stop $$(docker ps -qa)
-	# @docker system prune --all --force --volumes
-	# @docker network prune --force
-	# @docker volume prune --force
+#	@docker stop $$(docker ps -qa)
+#	@docker system prune --all --force --volumes
+#	@docker network prune --force
+#	@docker volume prune --force
 
-.PHONY	: all help build down re clean fclean
+.PHONY	: all help build down run re clean fclean
