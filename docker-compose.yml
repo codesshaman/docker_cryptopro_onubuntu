@@ -23,21 +23,26 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        TEST_CA: $TEST_CA
+        ROOT_CA: $ROOT_CA
+        PHP_URL: $PHP_URL
     tty:  true
     env_file:
       - .env
     restart: unless-stopped
     user: 1000:1000
     volumes:
-      - ./laravel:/var/www
+      - ./laravel:/var/www:z
     container_name: $CPRO_NAME
 
-  # composer:
-  #   image: composer:2.0.8
-  #   volumes:
-  #     - ./laravel:/var/www/
-  #   working_dir: /var/www/
-  #   command: composer install
-  #   depends_on:
-  #     - lar8cpro
+  websocket:
+    build:
+      context: .
+      dockerfile: Dockerfile.ws
+    ports:
+      - $WEBSOCKET_PORT:6001
+    restart: unless-stopped
+    volumes:
+      - ./laravel:/var/www:z
+    depends_on:
+      - cryptopro
+    container_name: $WS_NAME
