@@ -17,6 +17,8 @@ services:
     depends_on:
       - cryptopro
     container_name: $NGINX_NAME
+    networks:
+      - default
 
   cryptopro:
     build:
@@ -30,19 +32,30 @@ services:
       - .env
     restart: unless-stopped
     user: 1000:1000
+    ports:
+      - $WEBSOCKET_PORT:6001
     volumes:
       - ./laravel:/var/www:z
     container_name: $CPRO_NAME
+    networks:
+      - default
 
-  websocket:
+  scheduler:
     build:
       context: .
-      dockerfile: Dockerfile.ws
-    ports:
-      - $WEBSOCKET_PORT:6001
+      dockerfile: Scheduler
+    tty:  true
     restart: unless-stopped
-    volumes:
-      - ./laravel:/var/www:z
+    user: 1000:1000
     depends_on:
       - cryptopro
-    container_name: $WS_NAME
+    volumes:
+      - ./laravel:/var/www:z
+    container_name: $SCHED_NAME
+    networks:
+      - default
+
+networks:
+  default:
+    external:
+      name: $NETWORK_NAME

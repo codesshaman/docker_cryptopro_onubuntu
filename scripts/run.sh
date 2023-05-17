@@ -1,12 +1,16 @@
 #!/bin/bash
-GIT_PATH="$(grep "GIT_PATH" .env | sed -r 's/.{,9}//')"
-GIT_BRANCH="$(grep "GIT_BRANCH" .env | sed -r 's/.{,11}//')"
-NAME="$(grep "CPRO_NAME" .env | sed -r 's/.{,10}//')"
-USER_ID=$(id -u)
-FOLDER=${PWD##*/}
-# FILE_NAME='laravel/.env' #.env
-TIMEOUT=1
-ROOTENV=true
+git="$(grep "GIT_PATH" .env | sed -r 's/.{,9}//')"
+branch="$(grep "GIT_BRANCH" .env | sed -r 's/.{,11}//')"
+cproname="$(grep "CPRO_NAME" .env | sed -r 's/.{,10}//')"
+no='\033[0m'
+ok='\033[1;32m'
+blue='\033[0;34m'
+warn='\033[33;01m'
+error='\033[31;01m'
+folder=${PWD##*/}
+timeout=1
+rootenv=true
+mypath=${PWD}
 # Функция подтверждения
 confirm() {
     read -r -p "${1:-Are you sure? [y/N]} " response
@@ -19,64 +23,93 @@ confirm() {
             ;;
     esac
 }
+# Функция создания файла с окружением
+if [ ! -f .env ]; then
+    echo -e "${blue}[CryptoPro]${no}${warn}.env-файл отсутствует.${no}"
+    echo -e "${blue}[CryptoPro]${no}${warn}Воспользуйтесь командой${no} ${ok}make env${no} ${warn}для его создания${no}"
+    exit
+fi
 # Функция проверки имени проекта в конфиге nginx
 check_project_name() {
   if [ -f "nginx/conf.d/default.conf" ]; then
-    PCONFNAME="$(grep 'fastcgi_pass' nginx/conf.d/default.conf | sed -r 's/.{,20}//' | sed -r 's/(.+).{6}/\1/')"
-    if [ "$PCONFNAME" == "$NAME" ]; then
-      echo "Текущий nginx/conf.d/default.conf настроен"
+    pconfname="$(grep 'fastcgi_pass' nginx/conf.d/default.conf | sed -r 's/.{,20}//' | sed -r 's/(.+).{6}/\1/')"
+    if [ "$pconfname" == "$cproname" ]; then
+      echo -e "${blue}[CryptoPro]${no}${warn}Текущий nginx/conf.d/default.conf настроен${no}"
     else
-      sed -i "s!$PCONFNAME:9000!$NAME:9000!1" nginx/conf.d/default.conf
-      echo "Меняю имя проекта в nginx/conf.d/default.conf"
+      sed -i "s!$pconfname:9001!$cproname:9001!1" nginx/conf.d/default.conf
+      echo -e "${blue}[CryptoPro]${no}${warn}Меняю имя проекта в nginx/conf.d/default.conf${no}"
     fi
   else
-    echo "nginx/conf.d/default.conf not found"  
+    echo -e "${blue}[CryptoPro]${no}${error} Конфигурационный файл nginx не найден!${no}"  
   fi
 }
-# Функция проверки существования .env.example - файла
 # Функция проверки существования .env - файла
 check_env() {
-  if [ ! -f ".env.laravel" ]; then
-    ROOTENV=false
-    PROJECT_NAME=$(grep "GIT_BRANCH" .env | sed -r 's/.{,11}//')
-    if confirm "Не найден корневой env-файл .env.laravel, продолжить сборку? (y/n or enter for no)"; then
-      echo "Продолжаю сборку без env-файла"
+  if [ ! -f ".env.local" ]; then
+    if [ ! -f ".env.product" ]; then
+      rootenv=false
+      if confirm "Не найдены корневые env-файлы .env.local и .env.product, продолжить сборку? (y/n or enter for no)"; then
+        echo -e "${blue}[CryptoPro]${no}${warn}Продолжаю сборку без env-файлов${no}"
+      else
+        echo -e "${blue}[CryptoPro]${no}${warn}Добавьте в сборку актуальные .env-файлы для локального и удалённого запуска и выполните сборку снова${no}"
+        exit
+      fi
     else
-      echo "Добавьте в сборку актуальный .env-файл под именем .env.laravel и запустите скрипт снова"
-      exit
+      echo -e "${blue}[CryptoPro]${no}${warn}Файлы конфигурации .env отсутствуют!${no}"
     fi
-  else
-    echo "Файл конфигурации nginx отсутствует!"
   fi
 }
 # Функция билда
 run() {
   check_project_name
   docker-compose up -d --build
-  sleep ${TIMEOUT}
-  docker exec -it ${NAME} composer update --ignore-platform-req=ext-curl
-  sleep ${TIMEOUT}
-  docker exec -it ${NAME} php artisan passport:install
-  sleep ${TIMEOUT}
-  docker exec -it $NAME php artisan token:generate
-  sleep ${TIMEOUT}
-  docker exec -it $NAME php artisan optimize
-  sleep ${TIMEOUT}
-  # docker exec -it $NAME php artisan optimize:clear
-  make rbws
+  sleep ${timeout}
+  docker exec -it ${cproname} composer update --ignore-platform-req=ext-curl
+  sleep ${timeout}
+  docker exec -it ${cproname} php artisan passport:install
+  sleep ${timeout}
+  docker exec -it ${cproname} php artisan token:generate
+  sleep ${timeout}
+  docker exec -it ${cproname} php artisan optimize
+  sleep ${timeout}
+  # docker exec -it ${cproname} php artisan optimize:clear
+  make resh
 }
 # Функция клонирования сборки
 clone() {
   check_env
-  git clone ${GIT_PATH} -b ${GIT_BRANCH} laravel
-  if [ ! -f "laravel/.env" ]; then
-    cp .env.laravel laravel/.env
-  else
-    if [ $ROOTENV == true ]; then
-      if confirm "Заменить существующий .env-файл на корневой? (y/n or enter for no)"; then
-        cp .env.laravel laravel/.env
+  git clone ${git} -b ${branch} laravel
+  if [ $rootenv == true ]; then
+    if confirm "Применить production-config? (y/n or enter for no)"; then
+      if [ -f "laravel/.env" ]; then
+        mv laravel/.env laravel/.env.origin
       fi
+      echo -e "${blue}[CryptoPro]${no}${warn}Копирую конфигурацию для удалённого сервера${no}"
+      pth=($(echo "${mypath}" | tr '/' '\n'))
+      address=${pth[-1]}
+      adress=($(echo "${address}" | tr '.' '\n'))
+      subdomain=${adress[-3]}
+      domain=${adress[-2]}
+      zone=${adress[-1]}
+      hosts=$(cat .env.product | grep 'HOST=' | grep -oE '([[:alnum:]-]+\.){1,}+[[:alpha:]]{2,}')
+      host=($(echo "${hosts}" | tr ' ' '\n'))
+      if [ ${host[0]} != $address ]; then
+          echo -e "${blue}[CryptoPro]${no}${warn}Произвожу настройки доменного имени${no}"
+          sed -i "s!HOST=${host[0]}!HOST=${address}!1" .env.product
+          echo -e "${blue}[CryptoPro]${no}${ok}Доменное имя изменено на ${ok}${address}${no}"
+      else
+          echo -e "${blue}[CryptoPro]${no}${ok}Доменное имя уже настроено${no}"
+      fi
+      cp .env.product laravel/.env
+    else
+      if [ -f "laravel/.env" ]; then
+        mv laravel/.env laravel/.env.origin
+      fi
+      echo -e "${blue}[CryptoPro]${no}${warn}Копирую конфигурацию для локального хоста${no}"
+      cp .env.local laravel/.env
     fi
+  else
+      echo -e "${blue}[CryptoPro]${no}${warn}Файлы конфигурации .env отсутствуют, запускаюсь на предоставленном репозиторием${no}"
   fi
 }
 # Функция смены токены
@@ -99,9 +132,12 @@ clone() {
 # Тело скрипта
 if [ ! -d "laravel/" ]; then
   clone
-  echo "Запускаю конфигурацию ${FOLDER}!"
+  echo -e "${blue}[CryptoPro]${no}${warn}Запускаю конфигурацию ${folder}!${no}"
   run
 else
-  echo "Запускаю конфигурацию ${FOLDER}!"
+  echo -e "${blue}[CryptoPro]${no}${warn}Запускаю конфигурацию ${folder}!${no}"
   run
 fi
+make ps
+echo -e "${blue}[CryptoPro]${no}${warn}Не забудьте запустить websocker в отдельном TTY:${no}"
+echo -e "${blue}[CryptoPro]${no}${ok}make ws${no}"
